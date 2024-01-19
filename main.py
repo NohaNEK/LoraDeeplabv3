@@ -157,32 +157,31 @@ def get_dataset(opts):
         #                      split='sub_bdd', transform=val_transform)
     return train_dst, val_dst
 
-def add_gta_infos_in_tensorboard(writer,imgs,labels,rgb_lbs,rec_imgs,outputs,cur_itrs,denorm,train_loader):
+def add_gta_infos_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,train_loader):
         img=imgs[0].detach().cpu().numpy()
         img=(denorm(img)*255).astype(np.uint8)
-        rec_img=rec_imgs[0].detach().cpu().numpy()
-       
-        rec_img=(denorm(rec_img)*255).astype(np.uint8)
-        rgb_lb = rgb_lbs[0].detach().cpu().numpy()
-        rgb_lb = (denorm(rgb_lb)*255).astype(np.uint8)
-        writer.add_image('input image',img,cur_itrs,dataformats='CHW')
+        #writer.add_image('input image',img,cur_itrs,dataformats='CHW')
         # writer.add_image('rec image',img,cur_itrs,dataformats='CHW')
         # writer.add_image('coco image',rgb_lb,cur_itrs,dataformats='CHW')
         lbs=labels[0].detach().cpu().numpy()
-        writer.add_image('ground truth',train_loader.dataset.decode_target(lbs).astype('uint8'),cur_itrs,dataformats='HWC')
+        lbs=train_loader.dataset.decode_target(lbs).astype('uint8')
+        #writer.add_image('ground truth',train_loader.dataset.decode_target(lbs).astype('uint8'),cur_itrs,dataformats='HWC')
         pred=outputs.detach().max(1)[1].cpu().numpy()
         pred = train_loader.dataset.decode_target(pred[0]).astype('uint8')
-        writer.add_image('pred',pred,cur_itrs,dataformats='HWC')
-        img_grid = [img,rgb_lb,rec_img]
-        writer.add_images('svd transformation of gta image 0',img_grid,cur_itrs,dataformats='CHW')
+        #writer.add_image('pred',pred,cur_itrs,dataformats='HWC')
+        
+        
+        img_grid =  [img,lbs,pred]
+        writer.add_images('test sample gta 0',img_grid,cur_itrs,dataformats='CHW')
         img=imgs[1].detach().cpu().numpy()
         img=(denorm(img)*255).astype(np.uint8)
-        rec_img=rec_imgs[1].detach().cpu().numpy()
-        rec_img=(denorm(rec_img)*255).astype(np.uint8)
-        rgb_lb = rgb_lbs[1].detach().cpu().numpy()
-        rgb_lb = (denorm(rgb_lb)*255).astype(np.uint8)
-        img_grid =  [img,rgb_lb,rec_img]
-        writer.add_images('svd transformation of gta image 1',img_grid,cur_itrs,dataformats='CHW')
+        lbs=labels[1].detach().cpu().numpy()
+        lbs=train_loader.dataset.decode_target(lbs).astype('uint8')
+        pred=outputs.detach().max(1)[1].cpu().numpy()
+        pred = train_loader.dataset.decode_target(pred[1]).astype('uint8')
+
+        img_grid =  [img,lbs,pred]
+        writer.add_images('test sample gta 1',img_grid,cur_itrs,dataformats='CHW')
 def add_cs_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,train_loader,i):
     if imgs[i] == None :
         print("img none", i)
@@ -306,7 +305,7 @@ def main():
     torch.manual_seed(opts.random_seed)
     np.random.seed(opts.random_seed)
     random.seed(opts.random_seed)
-    writer = SummaryWriter("/media/fahad/Crucial X8/deeplabv3plus/original_baseline/logs/R101_s1s2")
+    writer = SummaryWriter("/media/fahad/Crucial X8/deeplabv3plus/modified_baseline/logs/R101_Baseline")
 
     # Setup dataloader
     if opts.dataset == 'voc' and not opts.crop_val:
