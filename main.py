@@ -426,7 +426,7 @@ def main():
                 print("Epoch %d, Itrs %d/%d, Loss=%f" %
                       (cur_epochs, cur_itrs, opts.total_itrs, interval_loss))
                 
-            if (cur_itrs) % 10 == 0: 
+            if (cur_itrs) % 100 == 0: 
                 writer.add_scalar('train_image_loss', np_loss, cur_itrs)
                 interval_loss = 0.0
                 add_gta_infos_in_tensorboard(writer,images,labels,outputs,cur_itrs,denorm,train_loader)
