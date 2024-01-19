@@ -151,8 +151,8 @@ def get_dataset(opts):
 
         train_dst = GTA(root=opts.data_root,
                                split='all', transform=train_transform)
-        val_dst = Cityscapes(root='/media/fahad/Crucial X8/gta5/validation_sets/',
-                             split='val_cs', transform=val_transform)
+        val_dst = Cityscapes(root='/media/fahad/Crucial X8/datasets/cityscapes/',
+                        split='val', transform=val_transform)
         # val_dst = GTAV(root='/media/fahad/Crucial X8/gta5/gta/',
         #                      split='sub_bdd', transform=val_transform)
     return train_dst, val_dst
