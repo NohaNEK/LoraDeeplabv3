@@ -15,7 +15,7 @@ class _SimpleSegmentationModel(nn.Module):
         features = self.backbone(x)
         x = self.classifier(features)
         x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
-        return x
+        return x,features
 
 
 class IntermediateLayerGetter(nn.ModuleDict):

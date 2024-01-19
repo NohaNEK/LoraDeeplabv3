@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from collections import OrderedDict
 try: # for torchvision<0.4
     from torchvision.models.utils import load_state_dict_from_url
 except: # for torchvision>=0.4
@@ -151,6 +152,8 @@ class ResNet(nn.Module):
                                        dilate=replace_stride_with_dilation[1])
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
                                        dilate=replace_stride_with_dilation[2])
+
+        
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -175,6 +178,9 @@ class ResNet(nn.Module):
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
+        if block == BasicBlock:
+            previous_dilation = 1
+            self.dilation = 1 
         if dilate:
             self.dilation *= stride
             stride = 1
@@ -196,21 +202,21 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        layers= OrderedDict()
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
+        x_l1 = self.layer1(x)
+        x = self.layer2(x_l1)
+        layers['layer2'] = x
         x = self.layer3(x)
-        x = self.layer4(x)
-
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
-
-        return x
+        layers['layer3'] = x
+        x_l4 = self.layer4(x)
+        layers['low_level'] = x_l1
+        layers['out'] = x_l4
+        return layers
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):
@@ -218,7 +224,7 @@ def _resnet(arch, block, layers, pretrained, progress, **kwargs):
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict = False)
     return model
 
 

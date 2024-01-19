@@ -6,7 +6,7 @@ import torch
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
-
+import random
 
 class Cityscapes(data.Dataset):
     """Cityscapes <http://www.cityscapes-dataset.com/> Dataset.
@@ -77,11 +77,13 @@ class Cityscapes(data.Dataset):
         self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
 
         self.targets_dir = os.path.join(self.root, self.mode, split)
+
         self.transform = transform
 
         self.split = split
         self.images = []
         self.targets = []
+   
 
         if split not in ['train', 'test', 'val']:
             raise ValueError('Invalid split for mode! Please use split="train", split="test"'
@@ -90,6 +92,9 @@ class Cityscapes(data.Dataset):
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
             raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
                                ' specified "split" and "mode" are inside the "root" directory')
+        
+
+
         
         for city in os.listdir(self.images_dir):
             img_dir = os.path.join(self.images_dir, city)
@@ -120,7 +125,9 @@ class Cityscapes(data.Dataset):
             than one item. Otherwise target is a json object if target_type="polygon", else the image segmentation.
         """
         image = Image.open(self.images[index]).convert('RGB')
+        # print(self.images[index])
         target = Image.open(self.targets[index])
+       
         if self.transform:
             image, target = self.transform(image, target)
         target = self.encode_target(target)
