@@ -85,7 +85,7 @@ class Cityscapes(data.Dataset):
         self.targets = []
    
 
-        if split not in ['train', 'test', 'val']:
+        if split not in ['train', 'test', 'val','val_cs']:
             raise ValueError('Invalid split for mode! Please use split="train", split="test"'
                              ' or split="val"')
 

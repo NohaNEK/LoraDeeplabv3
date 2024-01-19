@@ -22,15 +22,7 @@ import matplotlib.pyplot as plt
 import cv2
 from tensorboardX import SummaryWriter
 import pandas as pd
-train_transform = et.ExtCompose([
-            et.ExtResize(size= (1914,1052) ),
-    et.ExtRandomCrop(size=(768,768)),
-    et.ExtColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
-    et.ExtRandomHorizontalFlip(),
-    et.ExtToTensor(),
-    et.ExtNormalize(mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]),
-])
+
 
 val_transform = et.ExtCompose([
     et.ExtResize( (768,768)  ),
@@ -40,9 +32,9 @@ val_transform = et.ExtCompose([
 ])
 
 train_dst = GTA(root='/media/fahad/Crucial X8/Mohamed/GTA/',
-                        split='all', transform=train_transform)
-val_dst = Cityscapes(root='/media/fahad/Crucial X8/gta5/gta/',
-                        split='val', transform=val_transform)
+                        split='all', transform=val_transform)
+val_dst = Cityscapes(root='/media/fahad/Crucial X8/gta5/validation_sets/',
+                        split='val_cs', transform=val_transform)
 batch_size=1
 gta_loader = data.DataLoader(
     train_dst, batch_size=batch_size, shuffle=True, num_workers=4,
