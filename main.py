@@ -171,7 +171,7 @@ def add_gta_infos_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,trai
         #writer.add_image('pred',pred,cur_itrs,dataformats='HWC')
         
         
-        img_grid =  [img,lbs,pred]
+        img_grid =  [img,np.transpose(lbs,(2,0,1)),np.transpose(pred,(2,0,1))]
         writer.add_images('test sample gta 0',img_grid,cur_itrs,dataformats='CHW')
         img=imgs[1].detach().cpu().numpy()
         img=(denorm(img)*255).astype(np.uint8)
@@ -180,7 +180,7 @@ def add_gta_infos_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,trai
         pred=outputs.detach().max(1)[1].cpu().numpy()
         pred = train_loader.dataset.decode_target(pred[1]).astype('uint8')
 
-        img_grid =  [img,lbs,pred]
+        img_grid =  [img,np.transpose(lbs,(2,0,1)),np.transpose(pred,(2,0,1))]
         writer.add_images('test sample gta 1',img_grid,cur_itrs,dataformats='CHW')
 def add_cs_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,train_loader,i):
     if imgs[i] == None :
@@ -426,10 +426,10 @@ def main():
                 print("Epoch %d, Itrs %d/%d, Loss=%f" %
                       (cur_epochs, cur_itrs, opts.total_itrs, interval_loss))
                 
-            if (cur_itrs) % 100 == 0: 
+            if (cur_itrs) % 10 == 0: 
                 writer.add_scalar('train_image_loss', np_loss, cur_itrs)
                 interval_loss = 0.0
-                add_gta_infos_in_tensorboard(writer,images,labels,images,outputs,cur_itrs,denorm,train_loader)
+                add_gta_infos_in_tensorboard(writer,images,labels,outputs,cur_itrs,denorm,train_loader)
                 writer.add_scalar('LR_Backbone',scheduler.get_lr()[0],cur_itrs)
                 writer.add_scalar('LR_classifier',scheduler.get_lr()[1],cur_itrs)
                 writer_add_features(writer,'feat_lowl_from_images',feat_image['low_level'],cur_itrs)
