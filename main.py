@@ -49,7 +49,7 @@ def get_argparser():
     parser.add_argument("--test_only", action='store_true', default=False)
     parser.add_argument("--save_val_results", action='store_true', default=False,
                         help="save segmentation results to \"./results\"")
-    parser.add_argument("--total_itrs", type=int, default=40e3,
+    parser.add_argument("--total_itrs", type=int, default=100e3,
                         help="epoch number (default: 30k)")
     parser.add_argument("--lr", type=float, default=0.01,
                         help="learning rate (default: 0.01)")
@@ -305,7 +305,7 @@ def main():
     torch.manual_seed(opts.random_seed)
     np.random.seed(opts.random_seed)
     random.seed(opts.random_seed)
-    writer = SummaryWriter("/media/fahad/Crucial X8/deeplabv3plus/modified_baseline/logs/R101_Baseline")
+    writer = SummaryWriter("/media/fahad/Crucial X8/deeplabv3plus/Deeplabv3plus_baseline/logs/R101_Baseline")
 
     # Setup dataloader
     if opts.dataset == 'voc' and not opts.crop_val:
@@ -427,7 +427,8 @@ def main():
                       (cur_epochs, cur_itrs, opts.total_itrs, interval_loss))
                 
             if (cur_itrs) % 100 == 0: 
-                writer.add_scalar('train_image_loss', np_loss, cur_itrs)
+                interval_loss=interval_loss/100
+                writer.add_scalar('train_image_loss', interval_loss, cur_itrs)
                 interval_loss = 0.0
                 add_gta_infos_in_tensorboard(writer,images,labels,outputs,cur_itrs,denorm,train_loader)
                 writer.add_scalar('LR_Backbone',scheduler.get_lr()[0],cur_itrs)
@@ -443,8 +444,8 @@ def main():
                 writer.add_scalar('mean_lowfeat', torch.mean(feat_image['low_level'][0][0]).detach().cpu().numpy(), cur_itrs)
        
                 writer.add_scalar('mean_outfeat', torch.mean(feat_image['out'][0][0]).detach().cpu().numpy(), cur_itrs)
-                writer.add_scalar('mean_outfeat', torch.mean(feat_image['layer2'][0][0]).detach().cpu().numpy(), cur_itrs)
-                writer.add_scalar('mean_outfeat', torch.mean(feat_image['layer3'][0][0]).detach().cpu().numpy(), cur_itrs)
+                # writer.add_scalar('mean_outfeat', torch.mean(feat_image['layer2'][0][0]).detach().cpu().numpy(), cur_itrs)
+                # writer.add_scalar('mean_outfeat', torch.mean(feat_image['layer3'][0][0]).detach().cpu().numpy(), cur_itrs)
             if (cur_itrs) % opts.val_interval == 0:
                 save_ckpt('checkpoints/latest_%s_%s_os%d.pth' %
                           (opts.model, opts.dataset, opts.output_stride))

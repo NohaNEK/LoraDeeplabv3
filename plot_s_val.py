@@ -33,8 +33,8 @@ val_transform = et.ExtCompose([
 
 train_dst = GTA(root='/media/fahad/Crucial X8/Mohamed/GTA/',
                         split='all', transform=val_transform)
-val_dst = Cityscapes(root='/media/fahad/Crucial X8/gta5/validation_sets/',
-                        split='val_cs', transform=val_transform)
+val_dst = Cityscapes(root='/media/fahad/Crucial X8/datasets/cityscapes/',
+                        split='val', transform=val_transform)
 batch_size=1
 gta_loader = data.DataLoader(
     train_dst, batch_size=batch_size, shuffle=True, num_workers=4,
@@ -49,16 +49,46 @@ cpt=0
 for i, (images, _) in tqdm(enumerate(gta_loader)):
 
             
-            if cpt<500 :
+            if cpt<500:
                     images = images.to(device, dtype=torch.float32)
                     s=torch.linalg.svdvals(images) 
+                    print(s.shape)
                     
                     gta_s_vls.append(s[0])
             else: 
                     break
             cpt+=1
+print('s0 gta',gta_s_vls[0][:,0])
 torch.save(gta_s_vls,'gta_s_vls.pt')
-print("done gta ", len(gta_s_vls))            
+print("done gta ", len(gta_s_vls))  
+import matplotlib.pyplot as plt
+  
+# Plot the singular values
+# plt.plot(s[0][0,:].detach().cpu().numpy(), marker='o', linestyle='-', color='r')
+# plt.title('Singular Values of the Image')
+# plt.xlabel('Singular Value Index')
+# plt.ylabel('Singular Value Magnitude (r channel)')
+# plt.grid(True)
+# plt.savefig('s_vals_magnitude_img0_gta_r.png')
+# plt.show()
+
+#
+# plt.plot(s[0][1,:].detach().cpu().numpy(), marker='o', linestyle='-', color='g')
+# plt.title('Singular Values of the Image')
+# plt.xlabel('Singular Value Index')
+# plt.ylabel('Singular Value Magnitude (g channel)')
+# plt.grid(True)
+# plt.savefig('s_vals_magnitude_img0_gta_g.png')
+# plt.show()
+
+
+# plt.plot(s[0][2,:].detach().cpu().numpy(), marker='o', linestyle='-', color='b')
+# plt.title('Singular Values of the Image')
+# plt.xlabel('Singular Value Index')
+# plt.ylabel('Singular Value Magnitude (b channel)')
+# plt.grid(True)
+# plt.savefig('s_vals_magnitude_img0_gta_b.png')
+# plt.show()
 for i, (images, _) in tqdm(enumerate(cs_loader)):
 
             images = images.to(device, dtype=torch.float32)
