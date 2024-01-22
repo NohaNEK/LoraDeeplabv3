@@ -63,14 +63,14 @@ torch.save(gta_s_vls,'gta_s_vls.pt')
 print("done gta ", len(gta_s_vls))  
 import matplotlib.pyplot as plt
   
-# Plot the singular values
-# plt.plot(s[0][0,:].detach().cpu().numpy(), marker='o', linestyle='-', color='r')
-# plt.title('Singular Values of the Image')
-# plt.xlabel('Singular Value Index')
-# plt.ylabel('Singular Value Magnitude (r channel)')
-# plt.grid(True)
-# plt.savefig('s_vals_magnitude_img0_gta_r.png')
-# plt.show()
+#Plot the singular values
+plt.plot(s[0][0,:].detach().cpu().numpy(), marker='o', linestyle='-', color='r')
+plt.title('Singular Values of the Image')
+plt.xlabel('Singular Value Index')
+plt.ylabel('Singular Value Magnitude (r channel)')
+plt.grid(True)
+plt.savefig('s_vals_magnitude_img0_gta_r.png')
+plt.show()
 
 #
 # plt.plot(s[0][1,:].detach().cpu().numpy(), marker='o', linestyle='-', color='g')

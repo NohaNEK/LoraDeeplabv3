@@ -160,28 +160,14 @@ def get_dataset(opts):
 def add_gta_infos_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,train_loader):
         img=imgs[0].detach().cpu().numpy()
         img=(denorm(img)*255).astype(np.uint8)
-        #writer.add_image('input image',img,cur_itrs,dataformats='CHW')
-        # writer.add_image('rec image',img,cur_itrs,dataformats='CHW')
-        # writer.add_image('coco image',rgb_lb,cur_itrs,dataformats='CHW')
+        writer.add_image('gta_image',img,cur_itrs,dataformats='CHW')
         lbs=labels[0].detach().cpu().numpy()
         lbs=train_loader.dataset.decode_target(lbs).astype('uint8')
-        #writer.add_image('ground truth',train_loader.dataset.decode_target(lbs).astype('uint8'),cur_itrs,dataformats='HWC')
+        writer.add_image('gta_ground_truth',lbs,cur_itrs,dataformats='HWC')
         pred=outputs.detach().max(1)[1].cpu().numpy()
         pred = train_loader.dataset.decode_target(pred[0]).astype('uint8')
-        #writer.add_image('pred',pred,cur_itrs,dataformats='HWC')
+        writer.add_image('gta_pred',pred,cur_itrs,dataformats='HWC')
         
-        
-        img_grid =  [img,np.transpose(lbs,(2,0,1)),np.transpose(pred,(2,0,1))]
-        writer.add_images('test sample gta 0',img_grid,cur_itrs,dataformats='CHW')
-        img=imgs[1].detach().cpu().numpy()
-        img=(denorm(img)*255).astype(np.uint8)
-        lbs=labels[1].detach().cpu().numpy()
-        lbs=train_loader.dataset.decode_target(lbs).astype('uint8')
-        pred=outputs.detach().max(1)[1].cpu().numpy()
-        pred = train_loader.dataset.decode_target(pred[1]).astype('uint8')
-
-        img_grid =  [img,np.transpose(lbs,(2,0,1)),np.transpose(pred,(2,0,1))]
-        writer.add_images('test sample gta 1',img_grid,cur_itrs,dataformats='CHW')
 def add_cs_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,train_loader,i):
     if imgs[i] == None :
         print("img none", i)
@@ -441,11 +427,7 @@ def main():
                 writer.add_histogram('layer2_feats',feat_image['layer2'],cur_itrs)
                 writer.add_histogram('layer3_feats',feat_image['layer3'],cur_itrs)
                 writer.add_histogram('out_feats',feat_image['out'],cur_itrs)
-                writer.add_scalar('mean_lowfeat', torch.mean(feat_image['low_level'][0][0]).detach().cpu().numpy(), cur_itrs)
-       
-                writer.add_scalar('mean_outfeat', torch.mean(feat_image['out'][0][0]).detach().cpu().numpy(), cur_itrs)
-                # writer.add_scalar('mean_outfeat', torch.mean(feat_image['layer2'][0][0]).detach().cpu().numpy(), cur_itrs)
-                # writer.add_scalar('mean_outfeat', torch.mean(feat_image['layer3'][0][0]).detach().cpu().numpy(), cur_itrs)
+               
             if (cur_itrs) % opts.val_interval == 0:
                 save_ckpt('checkpoints/latest_%s_%s_os%d.pth' %
                           (opts.model, opts.dataset, opts.output_stride))
