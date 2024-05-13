@@ -81,7 +81,7 @@ class GTA(data.Dataset):
         self.train_rgb_lb_transform = train_rgb_lb_transform
 
         if split != 'all' : 
-            self.images_dir = os.path.join(self.root, 'Scene', split)
+            self.images_dir = os.path.join(self.root, 'ColorIds', split)
             self.targets_dir = os.path.join(self.root, self.mode, split)
            
             self.split = split
@@ -99,7 +99,7 @@ class GTA(data.Dataset):
         else:
             splits = ['train', 'val', 'test']
             for split in splits : 
-                self.images_dir = os.path.join(self.root, 'Scene', split)
+                self.images_dir = os.path.join(self.root, 'ColorIds', split)
                 self.targets_dir = os.path.join(self.root, self.mode, split)
                 # self.target_dir_rgb = os.path.join(self.root,'ColorIds',split)
                 # print('target',self.targets_dir)
