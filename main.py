@@ -27,7 +27,7 @@ def get_argparser():
     parser = argparse.ArgumentParser()
 
     # Datset Options
-    parser.add_argument("--data_root", type=str, default='/media/fahad/Crucial X8/Mohamed/GTA/',
+    parser.add_argument("--data_root", type=str, default='/media/fahad/Crucial X81/Mohamed/GTA/',
                         help="path to Dataset")
     parser.add_argument("--dataset", type=str, default='voc',
                         choices=['voc', 'cityscapes'], help='Name of dataset')
@@ -78,7 +78,7 @@ def get_argparser():
                         help="random seed (default: 1)")
     parser.add_argument("--print_interval", type=int, default=10,
                         help="print interval of loss (default: 10)")
-    parser.add_argument("--val_interval", type=int, default=1000,
+    parser.add_argument("--val_interval", type=int, default=5000,
                         help="epoch interval for eval (default: 100)")
     parser.add_argument("--download", action='store_true', default=False,
                         help="download datasets")
@@ -135,7 +135,7 @@ def get_dataset(opts):
         train_transform = et.ExtCompose([
             et.ExtResize(size= (1914,1052) ),
             et.ExtRandomCrop(size=(768,768)),
-            et.ExtColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
+           # et.ExtColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
             et.ExtRandomHorizontalFlip(),
             et.ExtToTensor(),
             et.ExtNormalize(mean=[0.485, 0.456, 0.406],
@@ -151,8 +151,10 @@ def get_dataset(opts):
 
         train_dst = GTA(root=opts.data_root,
                                split='all', transform=train_transform)
-        val_dst = Cityscapes(root='/media/fahad/Crucial X8/datasets/cityscapes/',
-                        split='val', transform=val_transform)
+        # val_dst = Cityscapes(root='/media/fahad/Crucial X81/datasets/cityscapes/',
+        #                 split='val', transform=val_transform)
+        val_dst = GTA(root=opts.data_root,
+                               split='val', transform=train_transform)
         # val_dst = GTAV(root='/media/fahad/Crucial X8/gta5/gta/',
         #                      split='sub_bdd', transform=val_transform)
     return train_dst, val_dst
@@ -174,6 +176,7 @@ def add_cs_in_tensorboard(writer,imgs,labels,outputs,cur_itrs,denorm,train_loade
     # print(imgs[i])
 
     img=imgs[i].detach().cpu().numpy()
+    print(img.shape)
 
     img=(denorm(img)*255).astype(np.uint8)
     lbs=labels[i].detach().cpu().numpy()
@@ -210,13 +213,14 @@ def validate(opts, model, loader, device, metrics,denorm=None,writer=None, cur_i
             images = images.to(device, dtype=torch.float32)
             labels = labels.to(device, dtype=torch.long)
 
+
             outputs,_ = model(images)
             preds = outputs.detach().max(dim=1)[1].cpu().numpy()
             targets = labels.cpu().numpy()
 
             metrics.update(targets, preds)
-            if i <4 :
-                add_cs_in_tensorboard(writer,images,labels,outputs,cur_itrs,denorm,loader,i)
+            # if i <4 :
+            #     add_cs_in_tensorboard(writer,images,labels,outputs,cur_itrs,denorm,loader,i)
             if ret_samples_ids is not None and i in ret_samples_ids:  # get vis samples
                 ret_samples.append(
                     (images[0].detach().cpu().numpy(), targets[0], preds[0]))
@@ -291,7 +295,7 @@ def main():
     torch.manual_seed(opts.random_seed)
     np.random.seed(opts.random_seed)
     random.seed(opts.random_seed)
-    writer = SummaryWriter("/media/fahad/Crucial X8/deeplabv3plus/Deeplabv3plus_baseline/logs/R101_Baseline")
+    writer = SummaryWriter("/media/fahad/DATA_2/test")
 
     # Setup dataloader
     if opts.dataset == 'voc' and not opts.crop_val:
@@ -379,6 +383,7 @@ def main():
        #writer = SummaryWriter("/media/fahad/Crucial X8/deeplabv3plus/original_baseline/logs/R101")
 
         # model.eval()
+        print('val len',len(val_loader))
         val_score, ret_samples = validate(
             opts=opts, model=model, loader=val_loader, device=device, metrics=metrics, ret_samples_ids=vis_sample_id,writer=writer)
         print(metrics.to_str(val_score))
