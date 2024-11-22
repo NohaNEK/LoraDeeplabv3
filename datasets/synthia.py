@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 
 
-class Cityscapes(data.Dataset):
+class SYNTHESIA(data.Dataset):
     """Cityscapes <http://www.cityscapes-dataset.com/> Dataset.
     
     **Parameters:**
@@ -65,41 +65,64 @@ class Cityscapes(data.Dataset):
     train_id_to_color = np.array(train_id_to_color)
     id_to_train_id = np.array([c.train_id for c in classes])
     id_to_color = np.array([c.color for c in classes ])
+    
     #train_id_to_color = [(0, 0, 0), (128, 64, 128), (70, 70, 70), (153, 153, 153), (107, 142, 35),
     #                      (70, 130, 180), (220, 20, 60), (0, 0, 142)]
     #train_id_to_color = np.array(train_id_to_color)
     #id_to_train_id = np.array([c.category_id for c in classes], dtype='uint8') - 1
 
-    def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None):
+    def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None,train_rgb_lb_transform=None):
         self.root = os.path.expanduser(root)
-        self.mode = 'gtFine'
+        self.mode = 'GT/LABELS/'
         self.target_type = target_type
-        self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
-
-        self.targets_dir = os.path.join(self.root, self.mode, split)
-        self.transform = transform
-
-        self.split = split
         self.images = []
         self.targets = []
+        self.target_rgb = []
+        self.transform = transform
+        self.train_rgb_lb_transform = train_rgb_lb_transform
 
-        if split not in ['train', 'test', 'val']:
-            raise ValueError('Invalid split for mode! Please use split="train", split="test"'
-                             ' or split="val"')
-
-        if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
-            raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
-                               ' specified "split" and "mode" are inside the "root" directory', self.images_dir,self.targets_dir)
+        if split != 'all' : 
+            self.images_dir = os.path.join(self.root, 'RGB', split)
+            self.targets_dir = os.path.join(self.root, self.mode, split)
+           
+            self.split = split
+            if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
+                raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
+                                ' specified "split" and "mode" are inside the "root" directory')
+            
+            for file_name in sorted(os.listdir(self.images_dir)):
+                base_name= file_name.split('.')[0]
+                self.images.append(os.path.join(self.images_dir, file_name))
+                target_name= base_name +'_labelTrainIds.png'
+                self.targets.append(os.path.join(self.targets_dir, target_name))
+            
+            # for file_name in sorted(os.listdir(self.targets_dir)):
+            #     self.targets.append(os.path.join(self.targets_dir, file_name))
         
-        for city in os.listdir(self.images_dir):
-            img_dir = os.path.join(self.images_dir, city)
-            target_dir = os.path.join(self.targets_dir, city)
+        
+        else:
+            splits = ['train', 'val', 'test']
+            for split in splits : 
+                self.images_dir = os.path.join(self.root, 'ColorIds', split)
+                self.targets_dir = os.path.join(self.root, self.mode, split)
+                # self.target_dir_rgb = os.path.join(self.root,'ColorIds',split)
+                # print('target',self.targets_dir)
+                # print('target rgb',self.target_dir_rgb)
+                self.split = split
+                if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
+                    raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
+                                    ' specified "split" and "mode" are inside the "root" directory')
+                
+                for file_name in sorted(os.listdir(self.images_dir)):
+                    self.images.append(os.path.join(self.images_dir, file_name))
+                
+                for file_name in sorted(os.listdir(self.targets_dir)):
+                    self.targets.append(os.path.join(self.targets_dir, file_name))
+                # for file_name in sorted(os.listdir(self.target_dir_rgb)):
+                #     self.target_rgb.append(os.path.join(self.target_dir_rgb, file_name))
 
-            for file_name in os.listdir(img_dir):
-                self.images.append(os.path.join(img_dir, file_name))
-                target_name = '{}_{}'.format(file_name.split('_leftImg8bit')[0],
-                                             self._get_target_suffix(self.mode, self.target_type))
-                self.targets.append(os.path.join(target_dir, target_name))
+
+
 
     @classmethod
     def encode_target(cls, target):
@@ -110,7 +133,7 @@ class Cityscapes(data.Dataset):
         target[target == 255] = 19
         #target = target.astype('uint8') + 1
         return cls.train_id_to_color[target]
-    
+
     @classmethod
     def decode_lbs(cls, target):
             #target[target == 255] = 19
@@ -126,11 +149,22 @@ class Cityscapes(data.Dataset):
             than one item. Otherwise target is a json object if target_type="polygon", else the image segmentation.
         """
         image = Image.open(self.images[index]).convert('RGB')
-        target = Image.open(self.targets[index])
-        name=self.targets[index]
+
+        target = Image.open(self.targets[index]).convert('L')
+        # print(self.images[index])
+        # print(self.targets[index])
+        # print(np.unique(np.array(target)))
+        
+        # rgb_labels = Image.open(self.target_rgb[index]).convert('RGB')
+        
+
         if self.transform:
+            # image, target,rgb_labels = self.transform(image, target,rgb_labels)
             image, target = self.transform(image, target)
-        target = self.encode_target(target)
+        #target = self.encode_target(target)
+
+        # rgb_lb = self.decode_target(target2)
+
         return image, target
 
     def __len__(self):

@@ -1,8 +1,9 @@
 # DeepLabv3Plus-Pytorch
 
 Pretrained DeepLabv3, DeepLabv3+ for Pascal VOC & Cityscapes.
-
+python inference.py --model deeplabv3plus_resnet101 --dataset cityscapes --ckpt ./checkpoints/latest_deeplabv3plus_resnet101_cityscapes_os16.pth --test_only
 ## Quick Start 
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libffi.so.7
 
 ### 1. Available Architectures
 | DeepLabV3    |  DeepLabV3+        |
@@ -51,6 +52,11 @@ Image folder:
 python predict.py --input datasets/data/cityscapes/leftImg8bit/train/bremen  --dataset cityscapes --model deeplabv3plus_mobilenet --ckpt checkpoints/best_deeplabv3plus_mobilenet_cityscapes_os16.pth --save_val_results_to test_results
 ```
 
+#stabilityai/stable-diffusion-xl-base-1.0
+
+python predict.py --model deeplabv3plus_resnet101 --dataset cityscapes --input "/media/fahad/DATA_2/stable_diff/auttomate/stable-diffusion-webui/output/txt2img-images" --save_val_results_to test_results
+
+python predict.py --model deeplabv3plus_resnet101 --dataset cityscapes --input "/media/fahad/DATA_2/stable_diff/auttomate/stable-diffusion-webui/output/rgb_labels/" --save_val_results_to "/media/fahad/DATA_2/stable_diff/auttomate/stable-diffusion-webui/output/rgb_labels_corrected"  
 ### 6. New backbones
 
 Please refer to [this commit (Xception)](https://github.com/VainF/DeepLabV3Plus-Pytorch/commit/c4b51e435e32b0deba5fc7c8ff106293df90590d) for more details about how to add new backbones.

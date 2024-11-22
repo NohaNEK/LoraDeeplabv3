@@ -26,7 +26,7 @@ def get_argparser():
     # Datset Options
     parser.add_argument("--input", type=str, required=True,
                         help="path to a single image or image directory")
-    parser.add_argument("--dataset", type=str, default='voc',
+    parser.add_argument("--dataset", type=str, default='cityscapes',
                         choices=['voc', 'cityscapes'], help='Name of training set')
 
     # Deeplab Options
@@ -35,7 +35,7 @@ def get_argparser():
                               network.modeling.__dict__[name])
                               )
 
-    parser.add_argument("--model", type=str, default='deeplabv3plus_mobilenet',
+    parser.add_argument("--model", type=str, default='deeplabv3plus_resnet101',
                         choices=available_models, help='model name')
     parser.add_argument("--separable_conv", action='store_true', default=False,
                         help="apply separable conv to decoder and aspp")
@@ -47,12 +47,12 @@ def get_argparser():
 
     parser.add_argument("--crop_val", action='store_true', default=False,
                         help='crop validation (default: False)')
-    parser.add_argument("--val_batch_size", type=int, default=4,
+    parser.add_argument("--val_batch_size", type=int, default=1,
                         help='batch size for validation (default: 4)')
     parser.add_argument("--crop_size", type=int, default=513)
 
     
-    parser.add_argument("--ckpt", default=None, type=str,
+    parser.add_argument("--ckpt", default="./checkpoints/latest_deeplabv3plus_resnet101_cityscapes_os16.pth", type=str,
                         help="resume from checkpoint")
     parser.add_argument("--gpu_id", type=str, default='0',
                         help="GPU ID")
@@ -64,7 +64,7 @@ def main():
         opts.num_classes = 21
         decode_fn = VOCSegmentation.decode_target
     elif opts.dataset.lower() == 'cityscapes':
-        opts.num_classes = 19
+        opts.num_classes = 19 #19
         decode_fn = Cityscapes.decode_target
 
     os.environ['CUDA_VISIBLE_DEVICES'] = opts.gpu_id
@@ -90,10 +90,12 @@ def main():
     if opts.ckpt is not None and os.path.isfile(opts.ckpt):
         # https://github.com/VainF/DeepLabV3Plus-Pytorch/issues/8#issuecomment-605601402, @PytaichukBohdan
         checkpoint = torch.load(opts.ckpt, map_location=torch.device('cpu'))
+        print(checkpoint)
         model.load_state_dict(checkpoint["model_state"])
         model = nn.DataParallel(model)
         model.to(device)
         print("Resume model from %s" % opts.ckpt)
+        
         del checkpoint
     else:
         print("[!] Retrain")
@@ -113,8 +115,8 @@ def main():
     else:
         transform = T.Compose([
                 T.ToTensor(),
-                T.Normalize(mean=[0.485, 0.456, 0.406],
-                                std=[0.229, 0.224, 0.225]),
+                # T.Normalize(mean=[0.485, 0.456, 0.406],
+                #                 std=[0.229, 0.224, 0.225]),
             ])
     if opts.save_val_results_to is not None:
         os.makedirs(opts.save_val_results_to, exist_ok=True)
@@ -126,8 +128,17 @@ def main():
             img = Image.open(img_path).convert('RGB')
             img = transform(img).unsqueeze(0) # To tensor of NCHW
             img = img.to(device)
-            
-            pred = model(img).max(1)[1].cpu().numpy()[0] # HW
+            print(type(img))
+            print(img.shape)
+       
+            out, _ = model(img)
+    
+            pred = out.max(1)[1].cpu().numpy()[0] # HW
+            # print(pred.shape)
+            # img_pred = Image.fromarray(pred.astype(np.uint8))
+            # print(img_pred)
+            # img_pred.save("/media/fahad/DATA_2/bdd_lbs_gen/new/label_ids/s2/"+ img_name+'.png')
+
             colorized_preds = decode_fn(pred).astype('uint8')
             colorized_preds = Image.fromarray(colorized_preds)
             if opts.save_val_results_to:

@@ -1,4 +1,5 @@
 import collections
+from typing import Any
 import torchvision
 import torch
 import torchvision.transforms.functional as F
@@ -269,7 +270,11 @@ class ExtPad(object):
         im = F.pad(img, ( pw//2, pw-pw//2, ph//2, ph-ph//2) )
         lbl = F.pad(lbl, ( pw//2, pw-pw//2, ph//2, ph-ph//2))
         return im, lbl
-
+# class Extnp(object):
+#     def __init__(self) :
+#     def __call__(self, pic,lbl):
+#         return np.array(pic),np.array(lbl)
+        
 class ExtToTensor(object):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -409,6 +414,7 @@ class ExtResize(object):
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
+        print(type(size))
         assert isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)
         self.size = size
         self.interpolation = interpolation
@@ -420,7 +426,7 @@ class ExtResize(object):
         Returns:
             PIL Image: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation), F.resize(lbl, self.size, Image.NEAREST)
+        return F.resize(img, self.size,Image.NEAREST), F.resize(lbl, self.size, Image.NEAREST)
 
     def __repr__(self):
         interpolate_str = _pil_interpolation_to_str[self.interpolation]

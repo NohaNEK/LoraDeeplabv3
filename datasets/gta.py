@@ -6,7 +6,7 @@ import torch
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
-
+import random
 
 class GTA(data.Dataset):
     """Cityscapes <http://www.cityscapes-dataset.com/> Dataset.
@@ -70,19 +70,21 @@ class GTA(data.Dataset):
     #train_id_to_color = np.array(train_id_to_color)
     #id_to_train_id = np.array([c.category_id for c in classes], dtype='uint8') - 1
 
-    def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None,train_rgb_lb_transform=None):
+    def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None):
         self.root = os.path.expanduser(root)
         self.mode = 'LabelIds'
         self.target_type = target_type
         self.images = []
         self.targets = []
         self.target_rgb = []
+        self.coco_imgs =[]
         self.transform = transform
-        self.train_rgb_lb_transform = train_rgb_lb_transform
 
         if split != 'all' : 
-            self.images_dir = os.path.join(self.root, 'ColorIds', split)
+            self.images_dir = os.path.join(self.root, 'Scene', split)
             self.targets_dir = os.path.join(self.root, self.mode, split)
+            # self.coco_image = os.path.join("/media/fahad/Crucial X8/deeplabv3plus/coco_ds/train2017")
+            print(self.images_dir)
            
             self.split = split
             if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
@@ -90,22 +92,29 @@ class GTA(data.Dataset):
                                 ' specified "split" and "mode" are inside the "root" directory')
             
             for file_name in sorted(os.listdir(self.images_dir)):
+    
                 self.images.append(os.path.join(self.images_dir, file_name))
+                
             
-            for file_name in sorted(os.listdir(self.targets_dir)):
+            for file_name in sorted(os.listdir(self.targets_dir)): 
+  
                 self.targets.append(os.path.join(self.targets_dir, file_name))
+            # for f_coco in sorted(os.listdir(self.coco_image)):
+            #         self.coco_imgs.append(os.path.join(self.coco_image,f_coco))
         
         
         else:
-            splits = ['train', 'val', 'test']
+            
+            splits = ['train',  'val']#'val',
             for split in splits : 
-                self.images_dir = os.path.join(self.root, 'ColorIds', split)
+                self.images_dir = os.path.join(self.root, 'Scene', split)
                 self.targets_dir = os.path.join(self.root, self.mode, split)
-                # self.target_dir_rgb = os.path.join(self.root,'ColorIds',split)
-                # print('target',self.targets_dir)
-                # print('target rgb',self.target_dir_rgb)
+            #    self.coco_image = os.path.join("/media/fahad/Crucial X8/deeplabv3plus/coco_ds/train2017")
+             
+              
                 self.split = split
-                if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
+
+                if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir): #or not os.path.isdir(self.coco_image):
                     raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
                                     ' specified "split" and "mode" are inside the "root" directory')
                 
@@ -114,8 +123,10 @@ class GTA(data.Dataset):
                 
                 for file_name in sorted(os.listdir(self.targets_dir)):
                     self.targets.append(os.path.join(self.targets_dir, file_name))
-                # for file_name in sorted(os.listdir(self.target_dir_rgb)):
-                #     self.target_rgb.append(os.path.join(self.target_dir_rgb, file_name))
+                
+                # for f_coco in sorted(os.listdir(self.coco_image)):
+                #     self.coco_imgs.append(os.path.join(self.coco_image,f_coco))
+
 
 
 
@@ -138,20 +149,26 @@ class GTA(data.Dataset):
             tuple: (image, target) where target is a tuple of all target types if target_type is a list with more
             than one item. Otherwise target is a json object if target_type="polygon", else the image segmentation.
         """
+
         image = Image.open(self.images[index]).convert('RGB')
         target = Image.open(self.targets[index])
+       
+        # id = random.randint(0,len(self.coco_imgs)-1)
+
+        # print(id)
+ 
         
-        # rgb_labels = Image.open(self.target_rgb[index]).convert('RGB')
-        
+        # coco_img = Image.open(self.coco_imgs[id]).convert('RGB')
+
+
 
         if self.transform:
-            # image, target,rgb_labels = self.transform(image, target,rgb_labels)
             image, target = self.transform(image, target)
+      
+
         target = self.encode_target(target)
 
-        # rgb_lb = self.decode_target(target2)
-
-        return image, target
+        return image, target#,coco_img
 
     def __len__(self):
         return len(self.images)
