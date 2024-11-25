@@ -293,7 +293,7 @@ def main():
     torch.manual_seed(opts.random_seed)
     np.random.seed(opts.random_seed)
     random.seed(opts.random_seed)
-    writer = SummaryWriter("/media/fahad/DATA_2/ckpt_deeplabv3_1/R101_CS__freezed_backbone_org_code_100K_768x768_lora_r64")
+    writer = SummaryWriter("/media/fahad/DATA_2/ckpt_deeplabv3_1/R101_CS__freezed_backbone_org_code_100K_768x768_lora_r8")
 
     # Setup dataloader
     if opts.dataset == 'voc' and not opts.crop_val:
@@ -314,22 +314,30 @@ def main():
         network.convert_to_separable_conv(model.classifier)
     utils.set_bn_momentum(model.backbone, momentum=0.01)
 
-    # for p in model.backbone.parameters():
-    #     p.requires_grad = False
+    for p in model.backbone.parameters():
+        p.requires_grad = False
 
-    trainable_params2 = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"before lora & freezed backbone Total trainable parameters: {trainable_params2}")
-    model.backbone = replace_conv_with_convlora(model.backbone, r=64, lora_alpha=8, lora_dropout=0.1)
+    trainable_params1 = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"before lora & freezed backbone Total trainable parameters: {trainable_params1}")
+    model.classifier = replace_conv_with_convlora(model.classifier, r=8, lora_alpha=8, lora_dropout=0.1)
 
     trainable_params2 = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"After lora & freezed backbone Total trainable parameters: {trainable_params2}")
+    print(trainable_params2/trainable_params1)
+    print("weights")
+    print("=*30")
+    # print(model.classifier)
+    # rrr
+    
+
+    
 
     # Set up metrics
     metrics = StreamSegMetrics(opts.num_classes)
 
     # Set up optimizer
     optimizer = torch.optim.SGD(params=[
-        {'params': model.backbone.parameters(), 'lr': 0.1 * opts.lr},
+        # {'params': model.backbone.parameters(), 'lr': 0.1 * opts.lr},
         {'params': model.classifier.parameters(), 'lr': opts.lr},
     ], lr=opts.lr, momentum=0.9, weight_decay=opts.weight_decay)
     # optimizer = torch.optim.SGD(params=model.parameters(), lr=opts.lr, momentum=0.9, weight_decay=opts.weight_decay)
@@ -410,6 +418,10 @@ def main():
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            # for n,p in model.module.classifier.named_parameters():
+            #     if p.requires_grad :
+            #         print(n)
+            #         print(p.mean())
 
             np_loss = loss.detach().cpu().numpy()
             interval_loss += np_loss
@@ -422,8 +434,8 @@ def main():
                       (cur_epochs, cur_itrs, opts.total_itrs, interval_loss))
                 writer.add_scalar('train_image_loss', interval_loss, cur_itrs)
                 interval_loss = 0.0
-                writer.add_scalar('LR_backbone',scheduler.get_lr()[0],cur_itrs)
-                writer.add_scalar('LR_Cls',scheduler.get_lr()[1],cur_itrs)
+                # writer.add_scalar('LR_backbone',scheduler.get_lr()[0],cur_itrs)
+                writer.add_scalar('LR_Cls',scheduler.get_lr()[0],cur_itrs)
 
 
 
