@@ -293,7 +293,7 @@ def main():
     torch.manual_seed(opts.random_seed)
     np.random.seed(opts.random_seed)
     random.seed(opts.random_seed)
-    writer = SummaryWriter("/media/fahad/DATA_2/ckpt_deeplabv3_1/R101_CS__freezed_backbone_org_code_100K_768x768_lora_r8")
+    writer = SummaryWriter("/media/fahad/DATA_2/ckpt_deeplabv3_1/R101_CS__freezed_backbone_org_code_100K_768x768_lora_r64_scale_2")
 
     # Setup dataloader
     if opts.dataset == 'voc' and not opts.crop_val:
@@ -313,32 +313,29 @@ def main():
     if opts.separable_conv and 'plus' in opts.model:
         network.convert_to_separable_conv(model.classifier)
     utils.set_bn_momentum(model.backbone, momentum=0.01)
+    trainable_params1 = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"before lora Total trainable parameters: {trainable_params1}")
 
     for p in model.backbone.parameters():
         p.requires_grad = False
 
-    trainable_params1 = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"before lora & freezed backbone Total trainable parameters: {trainable_params1}")
-    model.classifier = replace_conv_with_convlora(model.classifier, r=8, lora_alpha=8, lora_dropout=0.1)
+    
+    model.classifier = replace_conv_with_convlora(model.classifier, r=64, lora_alpha=128, lora_dropout=0.1)
 
     trainable_params2 = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"After lora & freezed backbone Total trainable parameters: {trainable_params2}")
     print(trainable_params2/trainable_params1)
     print("weights")
     print("=*30")
-    # print(model.classifier)
-    # rrr
-    
-
-    
 
     # Set up metrics
     metrics = StreamSegMetrics(opts.num_classes)
 
     # Set up optimizer
+    p_cls = [p for p in model.classifier.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params=[
         # {'params': model.backbone.parameters(), 'lr': 0.1 * opts.lr},
-        {'params': model.classifier.parameters(), 'lr': opts.lr},
+        {'params': p_cls, 'lr': opts.lr},
     ], lr=opts.lr, momentum=0.9, weight_decay=opts.weight_decay)
     # optimizer = torch.optim.SGD(params=model.parameters(), lr=opts.lr, momentum=0.9, weight_decay=opts.weight_decay)
     # torch.optim.lr_scheduler.StepLR(optimizer, step_size=opts.lr_decay_step, gamma=opts.lr_decay_factor)
@@ -366,7 +363,7 @@ def main():
         }, path)
         print("Model saved as %s" % path)
 
-    utils.mkdir('checkpoints_r101_cs_freezed_backbone_lora_r64')
+    utils.mkdir('checkpoints_r101_cs_freezed_backbone_lora_r64_scale_2')
     # Restore
     best_score = 0.0
     cur_itrs = 0
@@ -415,8 +412,14 @@ def main():
 
             optimizer.zero_grad()
             outputs,_  = model(images)
+            # print("outputs")
+            # print(outputs.min())
+            # print(outputs.max())
+         
+
             loss = criterion(outputs, labels)
             loss.backward()
+            
             optimizer.step()
             # for n,p in model.module.classifier.named_parameters():
             #     if p.requires_grad :
@@ -437,10 +440,15 @@ def main():
                 # writer.add_scalar('LR_backbone',scheduler.get_lr()[0],cur_itrs)
                 writer.add_scalar('LR_Cls',scheduler.get_lr()[0],cur_itrs)
 
+            if (cur_itrs) % 100 ==0:
+                for name, param in model.module.classifier.named_parameters():
+                   if param.grad is not None:
+                         writer.add_histogram(f"Gradients/{name}", param.grad, cur_itrs)
+
 
 
             if (cur_itrs) % opts.val_interval == 0:
-                save_ckpt('checkpoints_r101_cs_freezed_backbone_lora_r64/latest_%s_%s_os%d.pth' %
+                save_ckpt('checkpoints_r101_cs_freezed_backbone_lora_r64_scale_2/latest_%s_%s_os%d.pth' %
                           (opts.model, opts.dataset, opts.output_stride))
                 print("validation...")
                 #model.eval()
@@ -450,7 +458,7 @@ def main():
                 print(metrics.to_str(val_score))
                 if val_score['Mean IoU'] > best_score:  # save best model
                     best_score = val_score['Mean IoU']
-                    save_ckpt('checkpoints_r101_cs_freezed_backbone_lora_r64/best_%s_%s_os%d.pth' %
+                    save_ckpt('checkpoints_r101_cs_freezed_backbone_lora_r64_scale_2/best_%s_%s_os%d.pth' %
                               (opts.model, opts.dataset, opts.output_stride))
                     writer.add_scalar('mIoU_cs', val_score['Mean IoU'], cur_itrs)
                     writer.add_scalar('overall_acc_cs',val_score['Overall Acc'],cur_itrs)
